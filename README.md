@@ -184,9 +184,9 @@ By default the client runs on Vite's local development port and the API runs on 
 
 ### Client Firebase Setup
 
-The client uses `client/src/firebase.js` for Firebase configuration.
+The client uses `client/src/firebase.js` for Firebase configuration and reads values from `client/.env`.
 
-Before running the app, replace the sample Firebase keys with your own Firebase project details:
+Copy [.env.example](.env.example) to `client/.env` and replace the placeholder Firebase values with your own project details:
 
 - `apiKey`
 - `authDomain`
@@ -195,6 +195,10 @@ Before running the app, replace the sample Firebase keys with your own Firebase 
 - `storageBucket`
 - `messagingSenderId`
 - `appId`
+
+The optional `measurementId` is also supported if your Firebase project uses Analytics.
+
+The client-side environment variables must use the `VITE_` prefix so Vite exposes them to the browser bundle.
 
 ### Server Firebase Admin Setup
 

@@ -3,6 +3,7 @@ dist/
 *.log
 .env
 .env.*
+!.env.example
 client/node_modules/
 server/node_modules/
 server/serviceAccountKey.json
