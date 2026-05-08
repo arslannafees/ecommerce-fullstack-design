@@ -17,7 +17,6 @@
 <p>
   <a href="#getting-started">Getting Started</a> ·
   <a href="#features">Features</a> ·
-  <a href="#screenshots">Screenshots</a> ·
   <a href="#api">API</a> ·
   <a href="#project-structure">Structure</a>
 </p>
@@ -121,7 +120,7 @@ E-Commerce/
 │   ├── seedDatabase.js       # Optional seed script
 │   └── package.json
 ├── public/
-│   └── Images/               # README screenshots and static images
+│   └── Images/               
 └── README.md
 ```
 
