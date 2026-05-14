@@ -225,14 +225,7 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'E-Commerce API is running' });
 });
 
-// Serve static files from React build in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../client/dist')));
-  // Catch-all to serve index.html for any non-API routes
-  app.use((req, res) => {
-    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
-  });
-}
+// API is purely backend; Frontend is on Vercel
 
 // MESSAGES / INQUIRIES
 app.post('/api/messages', async (req, res) => {
