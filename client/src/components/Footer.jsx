@@ -122,7 +122,7 @@ function Footer() {
       {/* Copyright */}
       <div className="footer__bottom">
         <div className="container footer__bottom-inner">
-          <span>© 2023 Ecommerce.</span>
+          <span>© 2026 Ecommerce.</span>
           <span className="footer__lang">
             <span className="header__flag">🇺🇸</span>
             English
