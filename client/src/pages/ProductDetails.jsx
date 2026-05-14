@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { fetchProductById } from '../api/products';
-import { youMayLike, relatedProducts } from '../data/products';
+import { fetchProductById, fetchProducts, sendMessage } from '../api/products';
 import DiscountBanner from '../components/DiscountBanner';
 import { useCart } from '../context/CartContext';
 import './ProductDetails.css';
@@ -12,26 +11,85 @@ function ProductDetails() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('description');
   const [mainImage, setMainImage] = useState(0);
+  const [quantity, setQuantity] = useState(1);
   const { addToCart } = useCart();
 
+  // Messaging State
+  const [showModal, setShowModal] = useState(false);
+  const [msgData, setMsgData] = useState({ userName: '', email: '', message: '' });
+  const [sending, setSending] = useState(false);
+
+  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [youMayLike, setYouMayLike] = useState([]);
+
   useEffect(() => {
-    const loadProduct = async () => {
+    const loadProductAndRelated = async () => {
       try {
         const data = await fetchProductById(id);
         setProduct(data);
+        
+        const allProducts = await fetchProducts();
+        const related = allProducts.filter(p => p.category === data.category && p.id !== id);
+        setRelatedProducts(related.slice(0, 6));
+        setYouMayLike(allProducts.filter(p => p.id !== id).sort(() => 0.5 - Math.random()).slice(0, 5));
       } catch (error) {
-        console.error('Error fetching product details:', error);
+        console.error('Error fetching product data:', error);
       } finally {
         setLoading(false);
       }
     };
-    loadProduct();
+    loadProductAndRelated();
   }, [id]);
 
   if (loading) return <div className="container"><p>Loading product...</p></div>;
   if (!product) return <div className="container"><p>Product not found.</p></div>;
 
-  const thumbs = [product.image, product.image, product.image, product.image, product.image, product.image];
+  const basePrice = Number(product.price || 0);
+  const pricingTiers = [
+    { amount: basePrice, range: '1-100 pcs', min: 1 },
+    { amount: Math.max(basePrice * 0.9, 1), range: '100-700 pcs', min: 100 },
+    { amount: Math.max(basePrice * 0.78, 1), range: '700+ pcs', min: 700 },
+  ];
+
+  let currentTier = pricingTiers[0];
+  if (quantity >= 700) {
+    currentTier = pricingTiers[2];
+  } else if (quantity >= 100) {
+    currentTier = pricingTiers[1];
+  }
+  
+  const currentUnitPrice = currentTier.amount;
+
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    setSending(true);
+    try {
+      await sendMessage({
+        productId: product.id,
+        productName: product.name,
+        ...msgData
+      });
+      alert('Message sent to supplier successfully!');
+      setShowModal(false);
+      setMsgData({ userName: '', email: '', message: '' });
+    } catch (error) {
+      alert('Failed to send message.');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const inlineSpecs = [
+    ['Price:', `$${currentUnitPrice.toFixed(2)}`],
+    ['Total:', `$${(currentUnitPrice * quantity).toFixed(2)}`],
+    ['Type:', product.category || 'General'],
+    ['Brand:', product.brand || 'Generic'],
+    ['Material:', 'Premium mixed material'],
+    ['Design:', 'Modern'],
+    ['Customization:', 'Customized logo and design packages'],
+    ['Protection:', 'Refund policy'],
+    ['Warranty:', '2 years full warranty'],
+  ];
 
   const renderStars = (rating) => {
     const stars = [];
@@ -56,12 +114,12 @@ function ProductDetails() {
         <section className="detail__product" id="product-detail-section">
           <div className="detail__gallery">
             <div className="detail__main-img-wrap">
-              <img src={thumbs[mainImage]} alt={product.name} className="detail__main-img" />
+              <img src={product.image} alt={product.name} className="detail__main-img" />
             </div>
             <div className="detail__thumbs">
-              {thumbs.slice(0, 6).map((t, i) => (
+              {[...Array(6)].map((_, i) => (
                 <button key={i} className={`detail__thumb ${mainImage === i ? 'detail__thumb--active' : ''}`} onClick={() => setMainImage(i)}>
-                  <img src={t} alt={`Thumbnail ${i+1}`} />
+                  <img src={product.image} alt={`Thumbnail ${i+1}`} />
                 </button>
               ))}
             </div>
@@ -69,7 +127,7 @@ function ProductDetails() {
 
           <div className="detail__info">
             <span className="detail__stock">✓ In stock</span>
-            <h1 className="detail__title">{product.name || "Mens Long Sleeve T-shirt Cotton Base Layer Slim Muscle"}</h1>
+            <h1 className="detail__title">{product.name}</h1>
             <div className="detail__rating-row">
               <div className="detail__stars">{renderStars(product.rating)}</div>
               <span className="detail__rating-num">{product.rating}</span>
@@ -80,29 +138,35 @@ function ProductDetails() {
             </div>
 
             <div className="detail__pricing">
-              <div className="detail__price-tier detail__price-tier--active">
-                <span className="detail__price-amount">${product.price < 100 ? '98.00' : product.price.toFixed(2)}</span>
-                <span className="detail__price-range">50-100 pcs</span>
-              </div>
-              <div className="detail__price-tier">
-                <span className="detail__price-amount">$90.00</span>
-                <span className="detail__price-range">100-700 pcs</span>
-              </div>
-              <div className="detail__price-tier">
-                <span className="detail__price-amount">$78.00</span>
-                <span className="detail__price-range">700+ pcs</span>
-              </div>
+              {pricingTiers.map((tier) => (
+                <div 
+                  key={tier.range} 
+                  className={`detail__price-tier ${currentTier.range === tier.range ? 'detail__price-tier--active' : ''}`}
+                  onClick={() => setQuantity(tier.min)}
+                  style={{cursor: 'pointer'}}
+                >
+                  <span className="detail__price-amount">${tier.amount.toFixed(2)}</span>
+                  <span className="detail__price-range">{tier.range}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="detail__quantity-selector" style={{margin: '1.5rem 0', display: 'flex', alignItems: 'center', gap: '1rem'}}>
+               <label style={{fontWeight: '500'}}>Quantity:</label>
+               <input 
+                type="number" 
+                min="1" 
+                value={quantity} 
+                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                style={{width: '80px', padding: '0.5rem', border: '1px solid #e3e8ee', borderRadius: '4px'}}
+               />
             </div>
 
             <table className="detail__specs-inline">
               <tbody>
-                <tr><td>Price:</td><td>Negotiable</td></tr>
-                <tr><td>Type:</td><td>Classic shoes</td></tr>
-                <tr><td>Material:</td><td>Plastic material</td></tr>
-                <tr><td>Design:</td><td>Modern nice</td></tr>
-                <tr><td>Customization:</td><td>Customized logo and design custom packages</td></tr>
-                <tr><td>Protection:</td><td>Refund Policy</td></tr>
-                <tr><td>Warranty:</td><td>2 years full warranty</td></tr>
+                {inlineSpecs.map(([label, value]) => (
+                  <tr key={label}><td>{label}</td><td>{value}</td></tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -120,8 +184,8 @@ function ProductDetails() {
               <p>✅ Verified Seller</p>
               <p>🌐 Worldwide shipping</p>
             </div>
-            <button className="detail__supplier-btn detail__supplier-btn--primary" onClick={() => addToCart(product)}>Add to Cart</button>
-            <button className="detail__supplier-btn detail__supplier-btn--outline">Seller's profile</button>
+            <button className="detail__supplier-btn detail__supplier-btn--primary" onClick={() => addToCart({...product, price: currentUnitPrice}, quantity)}>Add to Cart</button>
+            <button className="detail__supplier-btn detail__supplier-btn--outline" onClick={() => setShowModal(true)}>Contact Supplier</button>
             <button className="detail__save-btn">♡ Save for later</button>
           </div>
         </section>
@@ -139,28 +203,11 @@ function ProductDetails() {
 
             <div className="detail__tab-content">
               <p className="detail__description">
-                Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
+                {product.description || 'No detailed description available for this product yet.'}
               </p>
               <p className="detail__description">
-                Quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+                Bulk orders include discounted pricing tiers, tracked shipping, and supplier-level support for repeat purchases.
               </p>
-
-              <table className="detail__specs-table">
-                <tbody>
-                  <tr><td>Model</td><td>#8786867</td></tr>
-                  <tr><td>Style</td><td>Classic style</td></tr>
-                  <tr><td>Certificate</td><td>ISO-898921212</td></tr>
-                  <tr><td>Size</td><td>34mm x 450mm x 19mm</td></tr>
-                  <tr><td>Memory</td><td>36GB RAM</td></tr>
-                </tbody>
-              </table>
-
-              <div className="detail__features">
-                <p>✓ Some great feature name here</p>
-                <p>✓ Lorem ipsum dolor sit amet, consectetur</p>
-                <p>✓ Duis aute irure dolor in reprehenderit</p>
-                <p>✓ Some great feature name here</p>
-              </div>
             </div>
           </div>
 
@@ -171,29 +218,32 @@ function ProductDetails() {
                 <img src={item.image} alt={item.name} className="detail__yml-img" />
                 <div>
                   <p className="detail__yml-name">{item.name}</p>
-                  <p className="detail__yml-price">{item.priceRange}</p>
+                  <p className="detail__yml-price">${item.price}</p>
                 </div>
               </Link>
             ))}
           </aside>
         </div>
-
-        {/* Related Products */}
-        <section className="detail__related" id="related-products">
-          <h2 className="detail__related-title">Related products</h2>
-          <div className="detail__related-grid">
-            {relatedProducts.map(item => (
-              <Link to={`/products/${item.id}`} key={item.id} className="detail__related-card">
-                <div className="detail__related-img-wrap">
-                  <img src={item.image} alt={item.name} />
-                </div>
-                <p className="detail__related-name">{item.name}</p>
-                <p className="detail__related-price">{item.priceRange}</p>
-              </Link>
-            ))}
-          </div>
-        </section>
       </div>
+
+      {/* Messaging Modal - MOVED TO TOP LEVEL TO AVOID CLIPPING */}
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>Contact Supplier</h3>
+            <p>Inquiry for: <strong>{product.name}</strong></p>
+            <form onSubmit={handleSendMessage}>
+              <input type="text" placeholder="Your Name" value={msgData.userName} onChange={(e) => setMsgData({...msgData, userName: e.target.value})} required />
+              <input type="email" placeholder="Your Email" value={msgData.email} onChange={(e) => setMsgData({...msgData, email: e.target.value})} required />
+              <textarea placeholder="Your Message..." rows="4" value={msgData.message} onChange={(e) => setMsgData({...msgData, message: e.target.value})} required></textarea>
+              <div className="modal-actions">
+                <button type="submit" className="btn-send" disabled={sending}>{sending ? 'Sending...' : 'Send Message'}</button>
+                <button type="button" className="btn-cancel" onClick={() => setShowModal(false)}>Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <DiscountBanner />
     </div>

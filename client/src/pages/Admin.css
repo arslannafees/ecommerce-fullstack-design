@@ -1,0 +1,42 @@
+.admin { maxWidth: 1000px; margin: 2rem auto; padding: 1rem; font-family: 'Inter', sans-serif; }
+.admin__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+.admin__title { font-size: 1.5rem; font-weight: bold; color: #1e293b; }
+.admin__count { background: #e0e7ff; color: #4338ca; padding: 0.25rem 0.75rem; borderRadius: 9999px; fontSize: 0.875rem; }
+
+.admin__form-card { background: white; padding: 2rem; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); margin-bottom: 3rem; }
+.admin__form { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+.admin__form-group { display: flex; flex-direction: column; gap: 0.5rem; }
+.admin__form-group--full { grid-column: span 2; }
+.admin__input { padding: 0.75rem; border-radius: 6px; border: 1px solid #d1d5db; font-size: 1rem; outline: none; transition: border-color 0.2s; }
+.admin__input:focus { border-color: #4f46e5; }
+
+.admin__actions { grid-column: span 2; display: flex; gap: 1rem; }
+.admin__btn { padding: 0.75rem 1.5rem; color: white; border: none; borderRadius: 6px; cursor: pointer; fontWeight: 600; fontSize: 1rem; flex: 1; }
+.admin__btn--primary { background: #4f46e5; }
+.admin__btn--cancel { background: #6b7280; }
+
+.admin__table-container { background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1); overflow: hidden; }
+.admin__table { width: 100%; border-collapse: collapse; }
+.admin__table th { background: #f8fafc; padding: 1rem; font-size: 0.875rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; text-align: left; border-bottom: 2px solid #e2e8f0; }
+.admin__table td { padding: 1rem; font-size: 1rem; color: #1e293b; border-bottom: 1px solid #e2e8f0; }
+
+.admin__product-cell { display: flex; align-items: center; gap: 1rem; }
+.admin__product-img { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; }
+.admin__edit-btn { color: #4f46e5; margin-right: 1rem; background: none; border: none; cursor: pointer; font-weight: 600; }
+.admin__delete-btn { color: #ef4444; background: none; border: none; cursor: pointer; font-weight: 600; }
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+    .admin__header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+    .admin__form { grid-template-columns: 1fr; }
+    .admin__form-group--full { grid-column: span 1; }
+    .admin__actions { grid-column: span 1; flex-direction: column; }
+    
+    /* Hide table headers */
+    .admin__table thead { display: none; }
+    .admin__table, .admin__table tbody, .admin__table tr, .admin__table td { display: block; width: 100%; }
+    .admin__table tr { margin-bottom: 1.5rem; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; position: relative; }
+    .admin__table td { border-bottom: none; padding: 0.5rem 0; display: flex; justify-content: space-between; align-items: center; }
+    .admin__table td::before { content: attr(data-label); font-weight: 600; color: #64748b; font-size: 0.875rem; }
+    .admin__product-cell { width: 100%; }
+}

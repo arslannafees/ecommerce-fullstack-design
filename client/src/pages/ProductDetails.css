@@ -99,25 +99,100 @@
 .detail__related-price { font-size: var(--fs-sm); color: var(--color-text-light); padding: var(--space-xs) var(--space-md) var(--space-md); }
 
 /* ===== RESPONSIVE ===== */
-@media (max-width: 1024px) {
-  .detail__product { grid-template-columns: 300px 1fr; }
-  .detail__supplier { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; align-items: center; }
-  .detail__supplier-btn { width: auto; flex: 1; }
-  .detail__related-grid { grid-template-columns: repeat(4, 1fr); }
-}
-
 @media (max-width: 768px) {
-  .detail__product { grid-template-columns: 1fr; }
-  .detail__bottom-layout { grid-template-columns: 1fr; }
-  .detail__related-grid { grid-template-columns: repeat(3, 1fr); }
-  .detail__tabs { overflow-x: auto; }
-  .detail__tab { white-space: nowrap; padding: var(--space-md) var(--space-base); }
-  .detail__breadcrumb { display: none; }
-  .detail__pricing { flex-wrap: wrap; }
-}
-
-@media (max-width: 480px) {
-  .detail__related-grid { grid-template-columns: repeat(2, 1fr); }
-  .detail__supplier { flex-direction: column; }
+  .detail { overflow-x: hidden; }
+  .detail__product { 
+    grid-template-columns: 1fr; 
+    padding: 15px; 
+    gap: 20px;
+    width: 100%;
+    margin: 0;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+  .detail__gallery { width: 100%; max-width: 100%; }
+  .detail__main-img-wrap { 
+    padding: 10px; 
+    max-height: 250px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .detail__main-img { height: 100%; width: 100%; object-fit: contain; }
+  .detail__thumbs { 
+    display: flex; 
+    overflow-x: auto; 
+    gap: 8px; 
+    padding: 5px 0;
+    width: 100%;
+  }
+  .detail__thumb { flex-shrink: 0; width: 50px; height: 50px; }
+  
+  .detail__pricing { 
+    display: grid !important; 
+    grid-template-columns: repeat(3, 1fr) !important; 
+    border: 1px solid var(--color-border);
+  }
+  .detail__price-tier { padding: 10px 5px; border-right: 1px solid var(--color-border); border-bottom: none; }
+  .detail__price-amount { font-size: 0.9rem; }
+  .detail__price-range { font-size: 0.7rem; }
+  
+  .detail__specs-inline td:first-child { width: 100px; font-size: 0.85rem; }
+  .detail__specs-inline td:last-child { font-size: 0.85rem; }
+  
+  .detail__supplier { grid-column: auto; padding: 15px; }
   .detail__supplier-btn { width: 100%; }
+  
+  .detail__bottom-layout { grid-template-columns: 1fr; gap: 15px; }
+  .detail__related-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .detail__tab { padding: 12px 15px; font-size: 0.9rem; }
 }
+/* Modal - FORCED VISIBILITY */
+.modal-overlay { 
+  position: fixed !important; 
+  top: 0 !important; 
+  left: 0 !important; 
+  right: 0 !important; 
+  bottom: 0 !important; 
+  background: rgba(0,0,0,0.7) !important; 
+  backdrop-filter: blur(8px) !important; 
+  display: flex !important; 
+  align-items: center !important; 
+  justify-content: center !important; 
+  z-index: 99999 !important; 
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+.modal-content { 
+  background: white !important; 
+  padding: 30px !important; 
+  border-radius: 12px !important; 
+  width: 90% !important; 
+  max-width: 500px !important; 
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2) !important; 
+  position: relative !important;
+  z-index: 100000 !important;
+}
+.modal-content h3 { margin-bottom: 15px; color: #1c1c1c; font-size: 1.5rem; }
+.modal-content p { margin-bottom: 20px; color: #606060; }
+.modal-content form { display: flex; flex-direction: column; gap: 15px; }
+.modal-content input, .modal-content textarea { 
+  padding: 12px; 
+  border: 1px solid #dee2e7; 
+  border-radius: 6px; 
+  font-size: 1rem; 
+  width: 100%;
+  outline: none;
+}
+.modal-content input:focus, .modal-content textarea:focus { border-color: #127fff; }
+.modal-actions { display: flex; gap: 10px; margin-top: 10px; }
+.modal-actions button { 
+  flex: 1; 
+  padding: 12px; 
+  border-radius: 6px; 
+  font-weight: 600; 
+  cursor: pointer; 
+  border: none;
+}
+.btn-send { background: #127fff; color: white; }
+.btn-cancel { background: #eee; color: #333; }

@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { categories } from '../data/products';
 import './Header.css';
 
 function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [allCategoryOpen, setAllCategoryOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { currentUser, isAdmin, logout } = useAuth();
   const { cartCount } = useCart();
@@ -14,6 +16,11 @@ function Header() {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     navigate(`/products${searchQuery ? `?search=${encodeURIComponent(searchQuery)}` : ''}`);
+  };
+
+  const handleCategoryClick = (category) => {
+    setAllCategoryOpen(false);
+    navigate(`/products?category=${encodeURIComponent(category)}`);
   };
 
   return (
@@ -96,7 +103,7 @@ function Header() {
               </svg>
               <span>Message</span>
             </Link>
-            <Link to="/" className="header__icon-link" id="nav-orders">
+            <Link to="/orders" className="header__icon-link" id="nav-orders">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8B96A5" strokeWidth="2">
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
               </svg>
@@ -123,6 +130,11 @@ function Header() {
                  </svg>
                </Link>
             )}
+            <Link to="/orders" className="header__mobile-icon" id="mobile-orders">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1C1C1C" strokeWidth="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+            </Link>
             <Link to="/cart" className="header__mobile-icon" id="mobile-cart" style={{ position: 'relative' }}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1C1C1C" strokeWidth="2">
                 <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
@@ -164,16 +176,36 @@ function Header() {
       <div className="header__nav">
         <div className="container header__nav-inner">
           <div className="header__nav-left">
-            <button className="header__nav-link header__nav-all" id="nav-all-category">
+            <div className="header__nav-all-wrap">
+            <button
+              className="header__nav-link header__nav-all"
+              id="nav-all-category"
+              onClick={() => setAllCategoryOpen((prev) => !prev)}
+              aria-expanded={allCategoryOpen}
+            >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
               </svg>
               All category
             </button>
-            <Link to="/" className="header__nav-link">Hot offers</Link>
-            <Link to="/" className="header__nav-link">Gift boxes</Link>
-            <Link to="/" className="header__nav-link">Projects</Link>
-            <Link to="/" className="header__nav-link">Menu item</Link>
+            {allCategoryOpen && (
+              <div className="header__category-dropdown" id="all-category-menu">
+                {categories.map((category) => (
+                  <button
+                    key={category}
+                    className="header__category-item"
+                    onClick={() => handleCategoryClick(category)}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+            )}
+            </div>
+            <Link to="/products?offer=hot" className="header__nav-link">Hot offers</Link>
+            <Link to="/products?promo=gift-boxes" className="header__nav-link">Gift boxes</Link>
+            <Link to="/products?type=project" className="header__nav-link">Projects</Link>
+            <Link to="/products" className="header__nav-link">Menu item</Link>
             <Link to="/" className="header__nav-link header__nav-help">
               Help
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -219,6 +251,7 @@ function Header() {
               <Link to="/" onClick={() => setMobileMenuOpen(false)}>Home</Link>
               <Link to="/products" onClick={() => setMobileMenuOpen(false)}>Products</Link>
               <Link to="/cart" onClick={() => setMobileMenuOpen(false)}>My Cart</Link>
+              <Link to="/orders" onClick={() => setMobileMenuOpen(false)}>My Orders</Link>
               <a href="#">Hot offers</a>
               <a href="#">Gift boxes</a>
               <a href="#">Projects</a>

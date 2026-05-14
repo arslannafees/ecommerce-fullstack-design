@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { savedForLater } from '../data/products';
+import { checkout } from '../api/products';
 import DiscountBanner from '../components/DiscountBanner';
 import { useCart } from '../context/CartContext';
 import './Cart.css';
@@ -9,6 +10,7 @@ function Cart() {
   const { cartItems: items, removeFromCart, updateQuantity, clearCart, cartTotal } = useCart();
   const [saved, setSaved] = useState(savedForLater);
   const [coupon, setCoupon] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const discount = subtotal > 0 ? 60.00 : 0;
@@ -21,6 +23,28 @@ function Cart() {
   const removeItem = (id) => {
     removeFromCart(id);
   };
+
+  const handleCheckout = async () => {
+    if (items.length === 0) return;
+    setLoading(true);
+    try {
+      const checkoutItems = items.map(i => ({ 
+        id: i.id, 
+        quantity: i.quantity,
+        name: i.name,
+        price: i.price,
+        image: i.image
+      }));
+      await checkout(checkoutItems);
+      alert('Checkout successful! Stock has been updated.');
+      clearCart();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Checkout failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const saveForLater = (id) => {
     const item = items.find(i => i.id === id);
     if (item) {
@@ -113,7 +137,9 @@ function Cart() {
               <div className="cart-page__summary-row cart-page__summary-total">
                 <span>Total:</span><span>${total.toFixed(2)}</span>
               </div>
-              <button className="cart-page__checkout-btn" id="checkout-btn">Checkout</button>
+              <button className="cart-page__checkout-btn" id="checkout-btn" onClick={handleCheckout} disabled={loading || items.length === 0}>
+                {loading ? 'Processing...' : 'Checkout'}
+              </button>
               <div className="cart-page__payment-icons">
                 <img src="https://img.icons8.com/color/48/amex.png" alt="Amex" width="40" />
                 <img src="https://img.icons8.com/color/48/mastercard-logo.png" alt="Mastercard" width="40" />
@@ -129,7 +155,9 @@ function Cart() {
               <div className="cart-page__mobile-summary-row"><span>Shipping:</span><span>$10.00</span></div>
               <div className="cart-page__mobile-summary-row"><span>Tax:</span><span>${tax.toFixed(2)}</span></div>
               <div className="cart-page__mobile-summary-row cart-page__mobile-total"><span>Total:</span><span>${total.toFixed(2)}</span></div>
-              <button className="cart-page__mobile-checkout-btn">Checkout ({items.length} items)</button>
+              <button className="cart-page__mobile-checkout-btn" onClick={handleCheckout} disabled={loading || items.length === 0}>
+                {loading ? 'Processing...' : `Checkout (${items.length} items)`}
+              </button>
             </div>
           </aside>
         </div>

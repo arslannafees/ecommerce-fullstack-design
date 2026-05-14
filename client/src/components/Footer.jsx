@@ -1,20 +1,44 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { subscribeNewsletter } from '../api/products';
 import './Footer.css';
 
 function Footer() {
+  const [email, setEmail] = useState('');
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    if (!email) return;
+    try {
+      await subscribeNewsletter(email);
+      alert('Thank you for subscribing!');
+      setEmail('');
+    } catch (error) {
+      alert('Subscription failed.');
+    }
+  };
+
   return (
     <footer className="footer">
       {/* Newsletter */}
       <section className="footer__newsletter" id="newsletter-section">
         <h3 className="footer__newsletter-title">Subscribe on our newsletter</h3>
         <p className="footer__newsletter-desc">Get daily news on upcoming offers from many suppliers all over the world</p>
-        <form className="footer__newsletter-form" onSubmit={(e) => e.preventDefault()}>
+        <form className="footer__newsletter-form" onSubmit={handleSubscribe}>
           <div className="footer__newsletter-input-wrap">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B96A5" strokeWidth="2">
               <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
               <polyline points="22,6 12,13 2,6"/>
             </svg>
-            <input type="email" placeholder="Email" className="footer__newsletter-input" id="newsletter-email" />
+            <input 
+              type="email" 
+              placeholder="Email" 
+              className="footer__newsletter-input" 
+              id="newsletter-email" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
           </div>
           <button type="submit" className="footer__newsletter-btn" id="newsletter-subscribe-btn">Subscribe</button>
         </form>
@@ -86,10 +110,10 @@ function Footer() {
           <div className="footer__links-group footer__app-group">
             <h4>Get app</h4>
             <a href="#" className="footer__app-badge">
-              <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Download_on_the_App_Store_Badge.svg/200px-Download_on_the_App_Store_Badge.svg.png" alt="App Store" />
+              <img src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" alt="App Store" />
             </a>
             <a href="#" className="footer__app-badge">
-              <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/78/Google_Play_Store_badge_EN.svg/200px-Google_Play_Store_badge_EN.svg.png" alt="Google Play" />
+              <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Google Play" />
             </a>
           </div>
         </div>

@@ -1,110 +1,173 @@
 import { useState, useEffect } from 'react';
-import { db } from '../firebase';
-import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { fetchProducts, addProduct, updateProduct, deleteProduct } from '../api/products';
+import './Admin.css';
 
 export default function Admin() {
     const [products, setProducts] = useState([]);
-    const [name, setName] = useState('');
-    const [price, setPrice] = useState('');
+    const [formData, setFormData] = useState({
+        name: '',
+        price: '',
+        image: '',
+        category: '',
+        stock: '',
+        brand: '',
+        description: ''
+    });
     const [editingId, setEditingId] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
     useEffect(() => {
-        fetchProducts();
+        loadProducts();
     }, []);
 
-    async function fetchProducts() {
-        const querySnapshot = await getDocs(collection(db, 'products'));
-        setProducts(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    async function loadProducts() {
+        setLoading(true);
+        try {
+            const data = await fetchProducts();
+            setProducts(data);
+        } catch (err) {
+            setError('Failed to load products');
+        } finally {
+            setLoading(false);
+        }
     }
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
 
     async function handleSubmit(e) {
         e.preventDefault();
+        setError('');
         try {
             if (editingId) {
-                await updateDoc(doc(db, 'products', editingId), { name, price: parseFloat(price) });
+                await updateProduct(editingId, formData);
                 setEditingId(null);
             } else {
-                await addDoc(collection(db, 'products'), { name, price: parseFloat(price) });
+                await addProduct(formData);
             }
-            setName('');
-            setPrice('');
-            fetchProducts();
-        } catch (error) {
-            console.error("Error saving product: ", error);
+            setFormData({ name: '', price: '', image: '', category: '', stock: '', brand: '', description: '' });
+            loadProducts();
+        } catch (err) {
+            setError(err.response?.data?.error || 'Failed to save product');
         }
     }
 
     function handleEdit(product) {
         setEditingId(product.id);
-        setName(product.name);
-        setPrice(product.price);
+        setFormData({
+            name: product.name,
+            price: product.price,
+            image: product.image || '',
+            category: product.category || '',
+            stock: product.stock || '',
+            brand: product.brand || '',
+            description: product.description || ''
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    async function handleDeleteProduct(id) {
+    async function handleDelete(id) {
+        if (!window.confirm('Are you sure you want to delete this product?')) return;
         try {
-            await deleteDoc(doc(db, 'products', id));
-            fetchProducts();
-        } catch (error) {
-            console.error("Error deleting product: ", error);
+            await deleteProduct(id);
+            loadProducts();
+        } catch (err) {
+            setError('Failed to delete product');
         }
     }
 
     return (
-        <div style={{ maxWidth: '800px', margin: '2rem auto', padding: '2rem' }}>
-            <h2>Admin Panel - Manage Products</h2>
+        <div className="admin">
+            <div className="admin__header">
+                <h2 className="admin__title">Inventory Management</h2>
+                <span className="admin__count">{products.length} Products</span>
+            </div>
             
-            <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
-                <input 
-                    type="text" 
-                    placeholder="Product Name" 
-                    value={name} 
-                    onChange={e => setName(e.target.value)} 
-                    required 
-                    style={{ padding: '0.5rem', flex: 1 }}
-                />
-                <input 
-                    type="number" 
-                    placeholder="Price" 
-                    value={price} 
-                    onChange={e => setPrice(e.target.value)} 
-                    required 
-                    style={{ padding: '0.5rem', width: '100px' }}
-                />
-                <button type="submit" style={{ padding: '0.5rem 1rem', background: editingId ? 'green' : 'black', color: 'white', border: 'none', cursor: 'pointer' }}>
-                    {editingId ? 'Update Product' : 'Add Product'}
-                </button>
-                {editingId && (
-                    <button type="button" onClick={() => { setEditingId(null); setName(''); setPrice(''); }} style={{ padding: '0.5rem 1rem', background: 'gray', color: 'white', border: 'none', cursor: 'pointer' }}>
-                        Cancel
-                    </button>
-                )}
-            </form>
+            {error && <div className="admin__error">{error}</div>}
 
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                    <tr style={{ background: '#f4f4f4', textAlign: 'left' }}>
-                        <th style={{ padding: '0.75rem', borderBottom: '1px solid #ccc' }}>Name</th>
-                        <th style={{ padding: '0.75rem', borderBottom: '1px solid #ccc' }}>Price</th>
-                        <th style={{ padding: '0.75rem', borderBottom: '1px solid #ccc' }}>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {products.map(product => (
-                        <tr key={product.id}>
-                            <td style={{ padding: '0.75rem', borderBottom: '1px solid #eee' }}>{product.name}</td>
-                            <td style={{ padding: '0.75rem', borderBottom: '1px solid #eee' }}>${product.price}</td>
-                            <td style={{ padding: '0.75rem', borderBottom: '1px solid #eee' }}>
-                                <button onClick={() => handleEdit(product)} style={{ padding: '0.25rem 0.5rem', background: 'blue', color: 'white', border: 'none', cursor: 'pointer', marginRight: '0.5rem' }}>
-                                    Edit
-                                </button>
-                                <button onClick={() => handleDeleteProduct(product.id)} style={{ padding: '0.25rem 0.5rem', background: 'red', color: 'white', border: 'none', cursor: 'pointer' }}>
-                                    Delete
-                                </button>
-                            </td>
+            <div className="admin__form-card">
+                <h3>{editingId ? 'Edit Product' : 'Add New Product'}</h3>
+                <form onSubmit={handleSubmit} className="admin__form">
+                    <div className="admin__form-group">
+                        <label>Product Name</label>
+                        <input name="name" value={formData.name} onChange={handleChange} required placeholder="e.g. Smart Watch" className="admin__input" />
+                    </div>
+                    <div className="admin__form-group">
+                        <label>Price ($)</label>
+                        <input name="price" type="number" step="0.01" value={formData.price} onChange={handleChange} required placeholder="0.00" className="admin__input" />
+                    </div>
+                    <div className="admin__form-group">
+                        <label>Category</label>
+                        <input name="category" value={formData.category} onChange={handleChange} placeholder="e.g. Electronics" className="admin__input" />
+                    </div>
+                    <div className="admin__form-group">
+                        <label>Brand</label>
+                        <input name="brand" value={formData.brand} onChange={handleChange} placeholder="e.g. Samsung, Apple" className="admin__input" />
+                    </div>
+                    <div className="admin__form-group">
+                        <label>Stock Quantity</label>
+                        <input name="stock" type="number" value={formData.stock} onChange={handleChange} placeholder="0" className="admin__input" />
+                    </div>
+                    <div className="admin__form-group">
+                        <label>Image URL</label>
+                        <input name="image" value={formData.image} onChange={handleChange} placeholder="https://..." className="admin__input" />
+                    </div>
+                    <div className="admin__form-group admin__form-group--full">
+                        <label>Description</label>
+                        <textarea name="description" value={formData.description} onChange={handleChange} rows="3" placeholder="Tell us about the product..." className="admin__input" style={{ resize: 'vertical' }} />
+                    </div>
+                    
+                    <div className="admin__actions">
+                        <button type="submit" className="admin__btn admin__btn--primary">
+                            {editingId ? 'Update Product' : 'Add Product'}
+                        </button>
+                        {editingId && (
+                            <button type="button" onClick={() => { setEditingId(null); setFormData({ name: '', price: '', image: '', category: '', stock: '', brand: '', description: '' }); }} className="admin__btn admin__btn--cancel">
+                                Cancel
+                            </button>
+                        )}
+                    </div>
+                </form>
+            </div>
+
+            <div className="admin__table-container">
+                <table className="admin__table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Brand</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Stock</th>
+                            <th>Actions</th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {loading ? <tr><td colSpan="6" style={{ textAlign: 'center', padding: '2rem' }}>Loading inventory...</td></tr> : 
+                         products.map(product => (
+                            <tr key={product.id}>
+                                <td data-label="Product">
+                                    <div className="admin__product-cell">
+                                        {product.image && <img src={product.image} alt="" className="admin__product-img" />}
+                                        <span style={{ fontWeight: '500' }}>{product.name}</span>
+                                    </div>
+                                </td>
+                                <td data-label="Brand">{product.brand || 'Generic'}</td>
+                                <td data-label="Category">{product.category || 'N/A'}</td>
+                                <td data-label="Price">${Number(product.price).toFixed(2)}</td>
+                                <td data-label="Stock">{product.stock || 0}</td>
+                                <td data-label="Actions">
+                                    <button onClick={() => handleEdit(product)} className="admin__edit-btn">Edit</button>
+                                    <button onClick={() => handleDelete(product.id)} className="admin__delete-btn">Delete</button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 }

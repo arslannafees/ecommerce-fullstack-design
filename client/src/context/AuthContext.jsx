@@ -5,8 +5,8 @@ import {
     signOut, 
     onAuthStateChanged 
 } from 'firebase/auth';
-import { auth, db } from '../firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { auth, rtdb } from '../firebase';
+import { ref, get, set } from 'firebase/database';
 
 const AuthContext = createContext();
 
@@ -21,11 +21,14 @@ export function AuthProvider({ children }) {
 
     async function signup(email, password) {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        // By default, new users aren't admins. Real app would handle this via Firebase Functions 
-        // or a secure admin panel.
-        await setDoc(doc(db, 'users', userCredential.user.uid), {
+        
+        // Use Realtime Database instead of Firestore
+        // For the very first user or a specific email, we could make them admin
+        const role = email === 'admin@example.com' ? 'admin' : 'user';
+        
+        await set(ref(rtdb, 'users/' + userCredential.user.uid), {
             email: email,
-            role: 'user'
+            role: role
         });
         return userCredential;
     }
@@ -42,10 +45,10 @@ export function AuthProvider({ children }) {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             setCurrentUser(user);
             if (user) {
-                // Check if admin
+                // Check if admin using RTDB
                 try {
-                    const userDoc = await getDoc(doc(db, 'users', user.uid));
-                    if (userDoc.exists() && userDoc.data().role === 'admin') {
+                    const snapshot = await get(ref(rtdb, `users/${user.uid}`));
+                    if (snapshot.exists() && snapshot.val().role === 'admin') {
                         setIsAdmin(true);
                     } else {
                         setIsAdmin(false);

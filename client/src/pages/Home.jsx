@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchProducts } from '../api/products';
+import { fetchProducts, sendInquiry } from '../api/products';
+import { categories } from '../data/products';
+import { useAuth } from '../context/AuthContext';
 import './Home.css';
 
 function Home() {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { currentUser } = useAuth();
+  const [inquiry, setInquiry] = useState({ item: '', details: '', quantity: '', unit: 'Pcs' });
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -22,6 +26,17 @@ function Home() {
     loadProducts();
   }, []);
 
+  const handleSubmitInquiry = async (e) => {
+    e.preventDefault();
+    try {
+      await sendInquiry(inquiry);
+      alert('Your inquiry has been sent to suppliers!');
+      setInquiry({ item: '', details: '', quantity: '', unit: 'Pcs' });
+    } catch (error) {
+      alert('Failed to send inquiry.');
+    }
+  };
+
   return (
     <div className="home">
       {/* HERO */}
@@ -29,8 +44,10 @@ function Home() {
         <div className="container hero__inner">
           <aside className="hero__sidebar">
             <ul className="hero__categories">
-              {["Automobiles","Clothes and wear","Home interiors","Computer and tech","Tools, equipments","Sports and outdoor","Animal and pets","Machinery tools","More category"].map((c,i) => (
-                <li key={i}><a href="#" className="hero__cat-link">{c}</a></li>
+              {categories.map((category) => (
+                <li key={category}>
+                  <Link to={`/products?category=${encodeURIComponent(category)}`} className="hero__cat-link">{category}</Link>
+                </li>
               ))}
             </ul>
           </aside>
@@ -46,12 +63,20 @@ function Home() {
           </div>
           <aside className="hero__right">
             <div className="hero__user-box">
-              <p className="hero__user-text">Hi, user<br/>let's get started</p>
-              <Link to="/" className="hero__user-btn hero__user-btn--primary">Join now</Link>
-              <Link to="/" className="hero__user-btn hero__user-btn--outline">Log in</Link>
+              <p className="hero__user-text">
+                {currentUser ? 'Welcome back!\nBrowse latest deals' : "Hi, user\nlet's get started"}
+              </p>
+              {currentUser ? (
+                <Link to="/products" className="hero__user-btn hero__user-btn--primary">Shop now</Link>
+              ) : (
+                <>
+                  <Link to="/signup" className="hero__user-btn hero__user-btn--primary">Join now</Link>
+                  <Link to="/login" className="hero__user-btn hero__user-btn--outline">Log in</Link>
+                </>
+              )}
             </div>
-            <div className="hero__promo hero__promo--orange">Get US $10 off with a new supplier</div>
-            <div className="hero__promo hero__promo--teal">Send quotes with supplier preferences</div>
+            <Link to="/products?promo=new-supplier" className="hero__promo hero__promo--orange">Get US $10 off with a new supplier</Link>
+            <Link to="/products?promo=supplier-quotes" className="hero__promo hero__promo--teal">Send quotes with supplier preferences</Link>
           </aside>
         </div>
       </section>
@@ -126,12 +151,41 @@ function Home() {
           </div>
           <div className="supplier-request__form-wrap">
             <h3 className="supplier-request__form-title">Send quote to suppliers</h3>
-            <form className="supplier-request__form" onSubmit={e => e.preventDefault()}>
-              <input type="text" placeholder="What item you need?" className="supplier-request__input" />
-              <textarea placeholder="Type more details" className="supplier-request__textarea" rows="3"></textarea>
+            <form className="supplier-request__form" onSubmit={handleSubmitInquiry}>
+              <input 
+                type="text" 
+                placeholder="What item you need?" 
+                className="supplier-request__input" 
+                value={inquiry.item}
+                onChange={e => setInquiry({...inquiry, item: e.target.value})}
+                required
+              />
+              <textarea 
+                placeholder="Type more details" 
+                className="supplier-request__textarea" 
+                rows="3"
+                value={inquiry.details}
+                onChange={e => setInquiry({...inquiry, details: e.target.value})}
+                required
+              ></textarea>
               <div className="supplier-request__row">
-                <input type="number" placeholder="Quantity" className="supplier-request__input supplier-request__input--sm" />
-                <select className="supplier-request__select"><option>Pcs</option></select>
+                <input 
+                  type="number" 
+                  placeholder="Quantity" 
+                  className="supplier-request__input supplier-request__input--sm" 
+                  value={inquiry.quantity}
+                  onChange={e => setInquiry({...inquiry, quantity: e.target.value})}
+                  required
+                />
+                <select 
+                  className="supplier-request__select"
+                  value={inquiry.unit}
+                  onChange={e => setInquiry({...inquiry, unit: e.target.value})}
+                >
+                  <option>Pcs</option>
+                  <option>Kg</option>
+                  <option>Liters</option>
+                </select>
               </div>
               <button type="submit" className="supplier-request__btn">Send inquiry</button>
             </form>
@@ -165,14 +219,14 @@ function Home() {
           <h2 className="services__title">Our extra services</h2>
           <div className="services__grid">
             {[
-              {title:"Source from Industry Hubs",bg:"#E3F0FF",color:"#127FFF"},
-              {title:"Customize Your Products",bg:"#FFF3E0",color:"#FF9017"},
-              {title:"Fast, reliable shipping by ocean or air",bg:"#E8F5E9",color:"#00B517"},
-              {title:"Product monitoring and inspection",bg:"#F3E5F5",color:"#9C27B0"},
+              {title:"Source from Industry Hubs",bg:"#E3F0FF",color:"#127FFF",img:"https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=400&h=200&fit=crop"},
+              {title:"Customize Your Products",bg:"#FFF3E0",color:"#FF9017",img:"https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=200&fit=crop"},
+              {title:"Fast, reliable shipping by ocean or air",bg:"#E8F5E9",color:"#00B517",img:"https://images.unsplash.com/photo-1494412651409-8963ce7935a7?w=400&h=200&fit=crop"},
+              {title:"Product monitoring and inspection",bg:"#F3E5F5",color:"#9C27B0",img:"https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?w=400&h=200&fit=crop"},
             ].map((s,i) => (
               <div key={i} className="services__card">
-                <div className="services__card-img" style={{background:s.bg}}>
-                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke={s.color} strokeWidth="2"><circle cx="12" cy="12" r="10"/></svg>
+                <div className="services__card-img-wrap">
+                  <img src={s.img} alt={s.title} className="services__card-img" />
                 </div>
                 <p className="services__card-title">{s.title}</p>
               </div>
